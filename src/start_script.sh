@@ -1,34 +1,23 @@
 #!/usr/bin/env bash
+set -euo pipefail
 
-# Determine which branch to clone based on environment variables
-BRANCH="master"  # Default branch
+# Set repo URL and branch
+REPO_URL="https://github.com/ChevKamin/runpod-diffusion_pipe.git"
+BRANCH="${BRANCH:-main}"
+DEST="/tmp/runpod-diffusion_pipe"
 
-if [ "$is_dev" == "true" ]; then
-    BRANCH="dev"
-    echo "Development mode enabled. Cloning dev branch..."
-elif [ -n "$git_branch" ]; then
-    BRANCH="$git_branch"
-    echo "Custom branch specified: $git_branch"
+# Clone if not already present
+if [ ! -d "$DEST/.git" ]; then
+    echo ">>> Cloning repo..."
+    git clone --branch "$BRANCH" "$REPO_URL" "$DEST"
 else
-    echo "Using default branch: master"
+    echo ">>> Repo already present, pulling latest changes..."
+    cd "$DEST"
+    git reset --hard
+    git clean -fd
+    git pull origin "$BRANCH"
 fi
 
-# Clone the repository to a temporary location with the specified branch
-echo "Cloning branch '$BRANCH' from repository..."
-git clone --branch "$BRANCH" https://github.com/ChevKamin/runpod-diffusion_pipe.git /tmp/runpod-diffusion_pipe
-
-# Check if clone was successful
-if [ $? -ne 0 ]; then
-    echo "Error: Failed to clone branch '$BRANCH'. Falling back to main branch..."
-    git clone https://github.com/ChevKamin/runpod-diffusion_pipe.git /tmp/runpod-diffusion_pipe
-
-    if [ $? -ne 0 ]; then
-        echo "Error: Failed to clone repository. Exiting..."
-        exit 1
-    fi
-fi
-
-# Move start.sh to root and execute it
-mv /tmp/runpod-diffusion_pipe/src/start.sh /
-chmod +x /start.sh
-bash /start.sh
+# Continue with the rest of your startup logic
+cd "$DEST/src"
+bash start.sh
